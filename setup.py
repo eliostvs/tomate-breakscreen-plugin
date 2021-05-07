@@ -45,6 +45,6 @@ setup(
     name="tomate-breakscreen-plugin",
     data_files=find_data_files(DATA_FILES, "tomate"),
     url="https://github.com/eliostva/tomate-breakscreen-plugin",
-    version="0.0.0",
+    version="0.1.0",
     zip_safe=False,
 )
