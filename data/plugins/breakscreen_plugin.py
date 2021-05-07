@@ -38,7 +38,7 @@ class BreakScreen(Subscriber):
             focus_on_map=False,
             gravity=Gdk.Gravity.CENTER,
             name="breakscreen",
-            opacity=0.8,
+            opacity=0.9,
             skip_taskbar_hint=True,
             urgency_hint=True,
         )
