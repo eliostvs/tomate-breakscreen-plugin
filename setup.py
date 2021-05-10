@@ -35,7 +35,7 @@ DATA_FILES = [
 
 
 setup(
-    author="Elio E. Duarte",
+    author="Elio Esteves Duarte",
     author_email="elio.esteves.duarte@gmail.com",
     description="Shows a fulls creen window which prevents users from using the computer during a break",
     include_package_data=True,
