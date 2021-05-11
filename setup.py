@@ -35,7 +35,7 @@ DATA_FILES = [
 
 
 setup(
-    author="Elio E. Duarte",
+    author="Elio Esteves Duarte",
     author_email="elio.esteves.duarte@gmail.com",
     description="Shows a fulls creen window which prevents users from using the computer during a break",
     include_package_data=True,
@@ -45,6 +45,6 @@ setup(
     name="tomate-breakscreen-plugin",
     data_files=find_data_files(DATA_FILES, "tomate"),
     url="https://github.com/eliostva/tomate-breakscreen-plugin",
-    version="0.2.0",
+    version="0.3.0",
     zip_safe=False,
 )

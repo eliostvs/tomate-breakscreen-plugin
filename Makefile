@@ -10,14 +10,16 @@ MAKEFLAGS     += --no-builtin-rules
 MAKEFLAGS     += --warn-undefined-variables
 SHELL         = bash
 
+DATAPATH     = $(CURDIR)/tests/data
 DEBUG         = TOMATE_DEBUG=1
 DOCKER_IMAGE  = eliostvs/tomate
 OBS_API_URL   = https://api.opensuse.org:443/trigger/runservice
 PLUGINPATH    = $(CURDIR)/data/plugins
+PYTEST       = 
 PYTHONPATH    = PYTHONPATH=$(CURDIR)/tomate:$(PLUGINPATH)
 VERSION       = `cat .bumpversion.cfg | grep current_version | awk '{print $$3}'`
 WORKDIR       = /code
-XDGPATH       = XDG_DATA_HOME=$(CURDIR)/data
+XDGPATH       = XDG_CONFIG_HOME=$(DATAPATH) XDG_DATA_HOME=$(DATAPATH) XDG_DATA_DIRS=$(DATAPATH)
 
 ifeq ($(shell which xvfb-run 1> /dev/null && echo yes),yes)
 	ARGS = xvfb-run -a
@@ -32,8 +34,8 @@ init:
 
 .PHONY: submodule
 submodule:
-	git submodule init;
-	git submodule update;
+	git submodule init
+	git submodule update
 
 .PHONY: format
 format:
