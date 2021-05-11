@@ -73,7 +73,7 @@ class TestPlugin:
         assert all([screen.widget.props.visible for screen in plugin.screens])
         assert label_text(payload.countdown, plugin)
 
-    def test_do_no_show_screen_when_plugin_is_deactivated(self, bus, plugin):
+    def test_no_show_screen_when_plugin_is_deactivated(self, bus, plugin):
         plugin.activate()
 
         payload = create_session_payload(type=SessionType.SHORT_BREAK)
@@ -83,7 +83,7 @@ class TestPlugin:
 
         assert none([screen.widget.props.visible for screen in plugin.screens])
 
-    def test_do_not_show_screen_when_the_session_is_a_pomodoro(self, bus, plugin):
+    def test_not_show_screen_when_the_session_is_a_pomodoro(self, bus, plugin):
         plugin.activate()
 
         payload = create_session_payload(type=SessionType.POMODORO)
@@ -103,7 +103,7 @@ class TestPlugin:
 
         session.start.assert_called_once()
 
-    def test_do_not_start_when_auto_start_is_disabled(self, bus, config, plugin, session):
+    def test_not_start_when_auto_start_is_disabled(self, bus, config, plugin, session):
         config.set(SECTION_NAME, AUTO_START_OPTION, "false")
 
         plugin.activate()
@@ -123,7 +123,7 @@ class TestPlugin:
 
         assert none([screen.widget.props.visible for screen in plugin.screens])
 
-    def test_do_not_start_session_when_is_not_a_break(self, bus, config, plugin, session):
+    def test_not_start_session_when_is_not_a_break(self, bus, config, plugin, session):
         config.set(SECTION_NAME, AUTO_START_OPTION, "True")
         plugin.activate()
 
@@ -138,7 +138,7 @@ class TestPlugin:
         assert none([screen.widget.props.visible for screen in plugin.screens])
 
     @pytest.mark.parametrize(
-        "action,option,initial,value, want",
+        "action,option,initial,value,want",
         [
             ("set", AUTO_START_OPTION, "false", "true", True),
             ("remove", AUTO_START_OPTION, "true", "", False),
@@ -154,6 +154,21 @@ class TestPlugin:
         bus.send(Events.CONFIG_CHANGE, payload=payload)
 
         assert all([screen.options[option] == want for screen in plugin.screens])
+
+    @pytest.mark.parametrize(
+        "action,want",
+        [
+            ("set", True),
+            ("remove", False),
+        ],
+    )
+    def test_hide_skip_button_when_settings_change(self, action, want, bus, config, plugin):
+        plugin.activate()
+
+        payload = ConfigPayload(action, SECTION_NAME, SKIP_BREAK_OPTION, "")
+        bus.send(Events.CONFIG_CHANGE, payload=payload)
+
+        assert all([screen.skip_button.props.visible == want for screen in plugin.screens])
 
     def test_updates_screens_countdown(self, bus, plugin):
         plugin.activate()

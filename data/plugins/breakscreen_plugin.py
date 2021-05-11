@@ -1,6 +1,7 @@
 import logging
 from collections import namedtuple
 from locale import gettext as _
+from typing import Dict
 
 import gi
 
@@ -55,27 +56,39 @@ class BreakScreen(Subscriber):
         self.monitor = monitor
         self.session = session
         self.options = self.create_options(config)
-        self.countdown = self.create_countdown()
-        box = Gtk.Box()
-        box.pack_start(self.countdown, True, True, 0)
-        self.widget = self.create_window(self.monitor)
-        self.widget.add(box)
+        self.countdown = Gtk.Label(label="00:00", name="countdown")
+        self.skip_button = self.create_button()
+        content = self.create_content_area(self.countdown, self.skip_button)
+        self.widget = self.create_window(self.monitor, content)
 
-    def create_options(self, config):
+    def create_options(self, config) -> Dict[str, bool]:
         return {
             SKIP_BREAK_OPTION: config.get_bool(SECTION_NAME, SKIP_BREAK_OPTION, fallback=False),
             AUTO_START_OPTION: config.get_bool(SECTION_NAME, AUTO_START_OPTION, fallback=False),
         }
 
-    def create_countdown(self):
-        return Gtk.Label(
-            "00:00",
-            name="countdown",
-            halign=Gtk.Align.CENTER,
-            valign=Gtk.Align.CENTER,
-        )
+    def create_button(self) -> Gtk.Button:
+        logger.debug("action=create_skip_button visibile=%s", self.options[SKIP_BREAK_OPTION])
+        button = Gtk.Button(label=_("Skip"), name="skip", visible=self.options[SKIP_BREAK_OPTION], no_show_all=True)
+        button.connect("clicked", self.skip_break)
+        button.grab_focus()
+        return button
 
-    def create_window(self, monitor):
+    def skip_break(self, _) -> None:
+        logger.debug("action=skip_break")
+        self.session.stop()
+        self.session.change(SessionType.POMODORO)
+
+    def create_content_area(self, countdown: Gtk.Label, skip_button: Gtk.Button) -> Gtk.Box:
+        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        content.pack_start(countdown, False, False, 0)
+        content.pack_start(skip_button, False, False, 0)
+
+        space = Gtk.Box(halign=Gtk.Align.CENTER, valign=Gtk.Align.CENTER)
+        space.pack_start(content, True, True, 0)
+        return space
+
+    def create_window(self, monitor: Monitor, box: Gtk.Box) -> Gtk.Window:
         window = Gtk.Window(
             can_focus=False,
             decorated=False,
@@ -93,6 +106,7 @@ class BreakScreen(Subscriber):
         window.fullscreen()
         window.move(monitor.x, monitor.y)
         window.resize(monitor.width, monitor.height)
+        window.add(box)
         return window
 
     @on(Events.SESSION_START)
@@ -118,11 +132,11 @@ class BreakScreen(Subscriber):
         )
 
         if payload.type != SessionType.POMODORO and self.auto_start:
-            GLib.timeout_add_seconds(0, self.start_session)
+            GLib.idle_add(self._start_session)
         else:
             self.widget.hide()
 
-    def start_session(self) -> bool:
+    def _start_session(self) -> bool:
         self.session.start()
         return False
 
@@ -140,6 +154,7 @@ class BreakScreen(Subscriber):
         if payload.section == SECTION_NAME:
             logger.debug("action=change_option action=%s option=%s", payload.action, payload.option)
             self.options[payload.option] = payload.action == "set"
+            self.skip_button.props.visible = self.options[SKIP_BREAK_OPTION]
 
 
 class SettingsDialog:
@@ -205,8 +220,33 @@ class BreakScreenPlugin(plugin.Plugin):
         self.configure_style()
 
     def configure_style(self):
+        style = b"""
+        #skip {
+            color: white;
+            font-size: 1.5em;
+            font-weight: 900;
+            background: transparent;
+            border-color: white;
+            border-image: none;
+            border-radius: 25px;
+            border-width: 2px;
+            padding-bottom: 10px;
+            padding-left: 25px;
+            padding-right: 25px;
+            padding-top: 10px;
+        }
+
+        #skip:hover, #skip:active {
+            background: white;
+            color: black;
+        }
+
+        #countdown {
+            font-size: 10em;
+        }
+        """
         style_provider = Gtk.CssProvider()
-        style_provider.load_from_data(b"#countdown { font-size: 10em; }")
+        style_provider.load_from_data(style)
         Gtk.StyleContext.add_provider_for_screen(
             Gdk.Screen.get_default(), style_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
         )
