@@ -11,6 +11,7 @@ gi.require_version("Gdk", "3.0")
 from gi.repository import Gtk, Gdk, GLib
 import tomate.pomodoro.plugin as plugin
 from tomate.pomodoro import (
+    Timer,
     Config,
     Events,
     Session,
@@ -132,7 +133,7 @@ class BreakScreen(Subscriber):
         )
 
         if payload.type != SessionType.POMODORO and self.auto_start:
-            GLib.idle_add(self._start_session)
+            GLib.timeout_add_seconds(Timer.ONE_SECOND, self._start_session)
         else:
             self.widget.hide()
 
@@ -146,13 +147,18 @@ class BreakScreen(Subscriber):
 
     @on(Events.TIMER_UPDATE)
     def on_timer_update(self, payload: TimerPayload) -> None:
-        logger.debug("action=update_countdown countdown=%s", payload.countdown)
+        logger.debug("action=update_countdown monitor=%s countdown=%s", payload.countdown, self.monitor.number)
         self.countdown.set_text(payload.countdown)
 
     @on(Events.CONFIG_CHANGE)
     def on_settings_change(self, payload: ConfigPayload) -> None:
         if payload.section == SECTION_NAME:
-            logger.debug("action=change_option action=%s option=%s", payload.action, payload.option)
+            logger.debug(
+                "action=change_option monitor=%d config=%s option=%s",
+                self.monitor.number,
+                payload.action,
+                payload.option,
+            )
             self.options[payload.option] = payload.action == "set"
             self.skip_button.props.visible = self.options[SKIP_BREAK_OPTION]
 
