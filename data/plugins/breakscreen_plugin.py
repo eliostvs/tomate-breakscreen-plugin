@@ -97,7 +97,6 @@ class BreakScreen(Subscriber):
             focus_on_map=False,
             gravity=Gdk.Gravity.CENTER,
             name="breakscreen",
-            opacity=0.9,
             skip_taskbar_hint=True,
             urgency_hint=True,
         )
@@ -227,6 +226,10 @@ class BreakScreenPlugin(plugin.Plugin):
 
     def configure_style(self):
         style = b"""
+        #breakscreen {
+            background-color: #1c1c1c;
+        }
+
         #skip {
             color: white;
             font-size: 1.5em;
