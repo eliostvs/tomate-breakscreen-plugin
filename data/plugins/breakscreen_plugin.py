@@ -19,7 +19,6 @@ from tomate.pomodoro import (
     on,
     suppress_errors,
     SessionPayload,
-    SessionEndPayload,
     SessionType,
     TimerPayload,
     ConfigPayload,
@@ -123,7 +122,7 @@ class BreakScreen(Subscriber):
         self.widget.hide()
 
     @on(Events.SESSION_END)
-    def on_session_end(self, payload: SessionEndPayload) -> None:
+    def on_session_end(self, payload: SessionPayload) -> None:
         logger.debug(
             "action=session_end monitor=%d auto_start=%s session_type=%s",
             self.monitor.number,

@@ -6,7 +6,7 @@ from gi.repository import Gtk
 from wiring import Graph
 
 from tomate.pomodoro import Bus, Config, ConfigPayload, Events, Session, SessionType, TimerPayload
-from tomate.ui.testing import Q, create_session_end_payload, create_session_payload, run_loop_for
+from tomate.ui.testing import Q, create_session_payload, run_loop_for
 
 SECTION_NAME = "break_screen"
 SKIP_BREAK_OPTION = "skip_break"
@@ -96,7 +96,7 @@ class TestPlugin:
 
         plugin.activate()
 
-        payload = create_session_end_payload(type=SessionType.SHORT_BREAK, previous="")
+        payload = create_session_payload(type=SessionType.SHORT_BREAK)
         bus.send(Events.SESSION_END, payload=payload)
 
         run_loop_for(1)
@@ -108,7 +108,7 @@ class TestPlugin:
 
         plugin.activate()
 
-        payload = create_session_end_payload(type=SessionType.SHORT_BREAK, previous="")
+        payload = create_session_payload(type=SessionType.SHORT_BREAK)
         bus.send(Events.SESSION_END, payload=payload)
 
         session.start.assert_not_called()
@@ -130,7 +130,7 @@ class TestPlugin:
         for screen in plugin.screens:
             screen.widget.show()
 
-        payload = create_session_end_payload(type=SessionType.POMODORO, previous="")
+        payload = create_session_payload(type=SessionType.POMODORO)
         bus.send(Events.SESSION_END, payload=payload)
 
         session.start.assert_not_called()
