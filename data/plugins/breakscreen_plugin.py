@@ -130,7 +130,7 @@ class BreakScreen(Subscriber):
             payload.type,
         )
 
-        if payload.type != SessionType.POMODORO and self.auto_start:
+        if payload.type == SessionType.POMODORO and self.auto_start:
             GLib.timeout_add_seconds(Timer.ONE_SECOND, self._start_session)
         else:
             self.widget.hide()
