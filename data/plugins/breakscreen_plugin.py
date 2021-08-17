@@ -150,15 +150,17 @@ class BreakScreen(Subscriber):
 
     @on(Events.CONFIG_CHANGE)
     def on_settings_change(self, payload: ConfigPayload) -> None:
-        if payload.section == SECTION_NAME:
-            logger.debug(
-                "action=change_option monitor=%d config=%s option=%s",
-                self.monitor.number,
-                payload.action,
-                payload.option,
-            )
-            self.options[payload.option] = payload.action == "set"
-            self.skip_button.props.visible = self.options[SKIP_BREAK_OPTION]
+        if payload.section != SECTION_NAME:
+            return
+
+        logger.debug(
+            "action=change_option monitor=%d config=%s option=%s",
+            self.monitor.number,
+            payload.action,
+            payload.option,
+        )
+        self.options[payload.option] = payload.action == "set"
+        self.skip_button.props.visible = self.options[SKIP_BREAK_OPTION]
 
 
 class SettingsDialog:
