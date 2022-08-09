@@ -47,4 +47,5 @@ setup(
     url="https://github.com/eliostva/tomate-breakscreen-plugin",
     version="0.6.1",
     zip_safe=False,
+    py_modules=[],
 )
