@@ -5,6 +5,8 @@ Tomate plugin that shows a full screen window which prevents users from using th
 
 Optionally runs a command at the end of a pause to lock the screen.
 
+*Note:* Despite its superficial similarities the pause screen does not provide the security a proper lock screen does.
+
 Development
 -----------
 
