@@ -3,6 +3,8 @@ Tomate Break Screen Plugin
 
 Tomate plugin that shows a full screen window which prevents users from using the computer during a break.
 
+Optionally runs a command at the end of a pause to lock the screen.
+
 Development
 -----------
 

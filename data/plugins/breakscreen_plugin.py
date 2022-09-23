@@ -1,7 +1,8 @@
 import logging
+import subprocess
 from collections import namedtuple
 from locale import gettext as _
-from typing import Dict
+from typing import Dict, Optional
 
 import gi
 
@@ -29,7 +30,11 @@ logger = logging.getLogger(__name__)
 SECTION_NAME = "break_screen"
 SKIP_BREAK_OPTION = "skip_break"
 AUTO_START_OPTION = "auto_start"
+LOCK_SCREEN_OPTION = "lock_screen"
 
+def strip_space(command: Optional[str]) -> Optional[str]:
+    if command is not None:
+        return command.strip()
 
 class Monitor(namedtuple("Monitor", "number geometry")):
     @property
@@ -65,6 +70,7 @@ class BreakScreen(Subscriber):
         return {
             SKIP_BREAK_OPTION: config.get_bool(SECTION_NAME, SKIP_BREAK_OPTION, fallback=False),
             AUTO_START_OPTION: config.get_bool(SECTION_NAME, AUTO_START_OPTION, fallback=False),
+            LOCK_SCREEN_OPTION: config.get(SECTION_NAME, LOCK_SCREEN_OPTION, fallback=False),
         }
 
     def create_button(self) -> Gtk.Button:
@@ -135,6 +141,25 @@ class BreakScreen(Subscriber):
         else:
             self.widget.hide()
 
+        if payload.type != SessionType.POMODORO:
+            self.maybe_call_lock_command()
+
+    def maybe_call_lock_command(self):
+        command = strip_space(self.options[LOCK_SCREEN_OPTION])
+        if command:
+            try:
+                logger.debug("action=call-lock-command cmd=%s", command)
+                subprocess.run(command, shell=True, check=True)
+                return True
+            except subprocess.CalledProcessError as error:
+                logger.debug(
+                    "action=run-command-failed event=%s cmd=%s output=%s return-code=%s",
+                    event,
+                    error.cmd,
+                    error.output,
+                    error.returncode,
+                )
+
     def _start_session(self) -> bool:
         self.session.start()
         return False
@@ -165,7 +190,7 @@ class BreakScreen(Subscriber):
 
 class SettingsDialog:
     def __init__(self, config: Config, toplevel):
-        self.options = {SKIP_BREAK_OPTION: False, AUTO_START_OPTION: False}
+        self.options = {SKIP_BREAK_OPTION: False, AUTO_START_OPTION: False, LOCK_SCREEN_OPTION: ""}
         self.config = config
         self.widget = self.create_dialog(toplevel)
 
@@ -188,6 +213,7 @@ class SettingsDialog:
         grid = Gtk.Grid(column_spacing=12, row_spacing=12, margin_bottom=12, margin_top=12)
         self.create_option(grid, 0, _("Auto start:"), AUTO_START_OPTION)
         self.create_option(grid, 1, _("Skip break:"), SKIP_BREAK_OPTION)
+        self.create_text_option(grid, 2, _("Run lock command:"), LOCK_SCREEN_OPTION)
         return grid
 
     def run(self):
@@ -205,6 +231,20 @@ class SettingsDialog:
         switch.connect("notify::active", self.on_option_change, option)
         grid.attach_next_to(switch, label, Gtk.PositionType.RIGHT, 1, 1)
 
+    def create_text_option(self, grid: Gtk.Grid, row: int, label: str, option):
+        command = self.config.get(SECTION_NAME, option, fallback="")
+
+        label = Gtk.Label(label=_(label), hexpand=True, halign=Gtk.Align.END)
+        grid.attach(label, 0, row, 1, 1)
+
+        entry = Gtk.Entry(editable=True, sensitive=bool(command), text=command, name=option + "_entry")
+        entry.connect("notify::text", self.on_command_change, option)
+        grid.attach(entry, 0, row + 1, 4, 1)
+
+        switch = Gtk.Switch(hexpand=True, halign=Gtk.Align.START, active=bool(command), name=option + "_switch")
+        switch.connect("notify::active", self.on_text_option_change, entry, option)
+        grid.attach_next_to(switch, label, Gtk.PositionType.RIGHT, 1, 1)
+
     def on_option_change(self, switch: Gtk.Switch, _, option: str):
         self.options[option] = switch.props.active
 
@@ -213,6 +253,20 @@ class SettingsDialog:
         else:
             logger.debug("action=remove_option name=%s", option)
             self.config.remove(SECTION_NAME, option)
+
+    def on_command_change(self, entry: Gtk.Entry, _, option: str) -> None:
+        command = strip_space(entry.props.text)
+        if command:
+            logger.debug("action=set_option option=%s command=%s", option, command)
+            self.config.set(SECTION_NAME, option, command)
+
+    def on_text_option_change(self, switch: Gtk.Switch, _, entry: Gtk.Entry, option: str) -> None:
+        if switch.props.active:
+            entry.props.sensitive = True
+        else:
+            logger.debug("action=remove_option option=%s", option)
+            self.config.remove(SECTION_NAME, option)
+            entry.set_properties(text="", sensitive=False)
 
 
 class BreakScreenPlugin(plugin.Plugin):
